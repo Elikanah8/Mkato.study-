@@ -1,12 +1,11 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { BookOpen, Brain, Zap, Users, ArrowRight, Star, CheckCircle } from 'lucide-react'
 import Image from 'next/image'
-import Link from 'next/link'
 
-// Animated typing text
+// ─── Typing animation ───────────────────────────────────────────────────────
 const typingPhrases = [
   "Never fail an exam again.",
   "Find any past paper instantly.",
@@ -23,7 +22,6 @@ function TypingText() {
   useEffect(() => {
     const current = typingPhrases[index]
     let timeout
-
     if (!deleting && displayed.length < current.length) {
       timeout = setTimeout(() => setDisplayed(current.slice(0, displayed.length + 1)), 60)
     } else if (!deleting && displayed.length === current.length) {
@@ -34,7 +32,6 @@ function TypingText() {
       setDeleting(false)
       setIndex((index + 1) % typingPhrases.length)
     }
-
     return () => clearTimeout(timeout)
   }, [displayed, deleting, index])
 
@@ -45,7 +42,7 @@ function TypingText() {
   )
 }
 
-// Floating blob background
+// ─── Floating blobs ──────────────────────────────────────────────────────────
 function Blobs() {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
@@ -80,7 +77,34 @@ function Blobs() {
   )
 }
 
-// Feature card
+// ─── University logo pill ────────────────────────────────────────────────────
+function UniPill({ name, delay }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, duration: 0.4 }}
+      whileHover={{ scale: 1.06, background: 'var(--teal-light)' }}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        background: 'var(--off-white)',
+        border: '1px solid rgba(74,155,142,0.2)',
+        borderRadius: '100px', padding: '6px 14px',
+        fontSize: '12px', fontWeight: '600',
+        color: 'var(--text-mid)', cursor: 'default',
+        transition: 'background 0.2s',
+      }}
+    >
+      <div style={{
+        width: '8px', height: '8px', borderRadius: '50%',
+        background: 'var(--teal)',
+      }} />
+      {name}
+    </motion.div>
+  )
+}
+
+// ─── Feature card ────────────────────────────────────────────────────────────
 function FeatureCard({ icon: Icon, title, desc, delay, color }) {
   return (
     <motion.div
@@ -90,12 +114,9 @@ function FeatureCard({ icon: Icon, title, desc, delay, color }) {
       transition={{ duration: 0.6, delay }}
       whileHover={{ y: -6, boxShadow: '0 20px 40px rgba(74,155,142,0.15)' }}
       style={{
-        background: 'var(--off-white)',
-        borderRadius: '16px',
-        padding: '28px 24px',
-        border: '1px solid rgba(74,155,142,0.15)',
-        cursor: 'default',
-        transition: 'box-shadow 0.3s',
+        background: 'var(--off-white)', borderRadius: '16px',
+        padding: '28px 24px', border: '1px solid rgba(74,155,142,0.15)',
+        cursor: 'default', transition: 'box-shadow 0.3s',
       }}
     >
       <div style={{
@@ -112,7 +133,7 @@ function FeatureCard({ icon: Icon, title, desc, delay, color }) {
   )
 }
 
-// Stat counter
+// ─── Stat item ───────────────────────────────────────────────────────────────
 function StatItem({ number, label, delay }) {
   return (
     <motion.div
@@ -128,13 +149,77 @@ function StatItem({ number, label, delay }) {
   )
 }
 
+// ─── Pricing card ────────────────────────────────────────────────────────────
+function PricingCard({ title, price, sub, features, cta, highlight, delay }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay }}
+      whileHover={{ y: -4 }}
+      style={{
+        background: highlight ? 'var(--teal)' : 'var(--eggshell)',
+        borderRadius: '20px', padding: '36px 28px',
+        border: highlight ? 'none' : '1px solid rgba(74,155,142,0.2)',
+        boxShadow: highlight ? '0 20px 50px rgba(74,155,142,0.35)' : 'none',
+        position: 'relative', overflow: 'hidden',
+        transition: 'box-shadow 0.3s',
+      }}
+    >
+      {highlight && (
+        <div style={{
+          position: 'absolute', top: '16px', right: '16px',
+          background: '#EF9F27', borderRadius: '100px',
+          padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: 'white',
+        }}>
+          MOST POPULAR
+        </div>
+      )}
+      <p style={{ fontSize: '13px', fontWeight: '700', color: highlight ? 'rgba(255,255,255,0.7)' : 'var(--text-mid)', marginBottom: '8px', letterSpacing: '0.05em' }}>{title}</p>
+      <p style={{ fontSize: '42px', fontWeight: '800', color: highlight ? 'white' : 'var(--text-dark)', marginBottom: '4px' }}>{price}</p>
+      <p style={{ fontSize: '13px', color: highlight ? 'rgba(255,255,255,0.6)' : 'var(--text-light)', marginBottom: '28px' }}>{sub}</p>
+      {features.map(f => (
+        <div key={f} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
+          <CheckCircle size={16} color={highlight ? 'rgba(255,255,255,0.9)' : 'var(--teal)'} />
+          <span style={{ fontSize: '14px', color: highlight ? 'rgba(255,255,255,0.9)' : 'var(--text-mid)' }}>{f}</span>
+        </div>
+      ))}
+      <motion.button
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        style={{
+          width: '100%', marginTop: '24px', padding: '14px',
+          background: highlight ? 'white' : 'transparent',
+          border: highlight ? 'none' : '2px solid var(--teal)',
+          borderRadius: '10px',
+          color: highlight ? 'var(--teal)' : 'var(--teal)',
+          fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+        }}
+      >
+        {cta}
+      </motion.button>
+    </motion.div>
+  )
+}
+
+// ─── Main page ───────────────────────────────────────────────────────────────
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const universities = [
+    'University of Nairobi',
+    'Kenyatta University',
+    'JKUAT',
+    'KCA University',
+    'Strathmore University',
+    'USIU Africa',
+    'Moi University',
+    'Egerton University',
+  ]
 
   return (
     <main style={{ background: 'var(--eggshell)', minHeight: '100vh' }}>
 
-      {/* NAVBAR */}
+      {/* ── NAVBAR ── */}
       <motion.nav
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -144,11 +229,11 @@ export default function Home() {
           background: 'rgba(244,241,232,0.85)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(74,155,142,0.15)',
-          padding: '0 24px',
-          height: '64px',
+          padding: '0 24px', height: '64px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
+        {/* Logo */}
         <motion.div whileHover={{ scale: 1.03 }} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Image src="/mkato_study_logo.svg" alt="Mkato.study logo" width={36} height={36} />
           <span style={{ fontWeight: '800', fontSize: '20px', color: 'var(--teal)' }}>
@@ -156,12 +241,12 @@ export default function Home() {
           </span>
         </motion.div>
 
-        {/* Desktop nav links */}
-        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }} className="desktop-nav">
+        {/* Nav links */}
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
           {['Features', 'How it works', 'Pricing'].map((item) => (
             <motion.a
               key={item}
-              href={`#${item.toLowerCase().replace(' ', '-')}`}
+              href={`#${item.toLowerCase().replace(/ /g, '-')}`}
               whileHover={{ color: 'var(--teal)' }}
               style={{ fontSize: '14px', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: '500' }}
             >
@@ -170,30 +255,28 @@ export default function Home() {
           ))}
         </div>
 
+        {/* CTA */}
         <motion.button
           whileHover={{ scale: 1.05, background: 'var(--teal-dark)' }}
           whileTap={{ scale: 0.97 }}
           style={{
-            background: 'var(--teal)', color: 'white',
-            border: 'none', borderRadius: '10px',
-            padding: '10px 20px', fontSize: '14px',
-            fontWeight: '600', cursor: 'pointer',
+            background: 'var(--teal)', color: 'white', border: 'none',
+            borderRadius: '10px', padding: '10px 20px',
+            fontSize: '14px', fontWeight: '600', cursor: 'pointer',
           }}
         >
           Get Started Free
         </motion.button>
       </motion.nav>
 
-      {/* HERO SECTION */}
+      {/* ── HERO ── */}
       <section style={{
         position: 'relative', minHeight: '100vh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '100px 24px 60px',
-        overflow: 'hidden',
+        padding: '100px 24px 60px', overflow: 'hidden',
       }}>
         <Blobs />
-
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '800px' }}>
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '820px' }}>
 
           {/* Badge */}
           <motion.div
@@ -213,17 +296,14 @@ export default function Home() {
             </span>
           </motion.div>
 
-          {/* Main heading */}
+          {/* Heading */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.7 }}
             style={{
-              fontSize: 'clamp(36px, 6vw, 68px)',
-              fontWeight: '800',
-              lineHeight: 1.15,
-              marginBottom: '20px',
-              color: 'var(--text-dark)',
+              fontSize: 'clamp(36px, 6vw, 68px)', fontWeight: '800',
+              lineHeight: 1.15, marginBottom: '20px', color: 'var(--text-dark)',
             }}
           >
             The shortcut to<br />
@@ -236,18 +316,27 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             style={{
-              fontSize: 'clamp(16px, 2.5vw, 20px)',
-              color: 'var(--text-mid)',
-              maxWidth: '560px',
-              margin: '0 auto 40px',
-              lineHeight: 1.7,
+              fontSize: 'clamp(16px, 2.5vw, 20px)', color: 'var(--text-mid)',
+              maxWidth: '580px', margin: '0 auto 36px', lineHeight: 1.7,
             }}
           >
-            Find past papers from UoN, KU, JKUAT and more. Ask Mkato AI to explain any answer.
-            Generate notes, flashcards, and practice exams — all in one place.
+            Find past papers from UoN, KU, JKUAT, KCA, Strathmore, USIU and more.
+            Ask Mkato AI to explain any answer. Generate notes, flashcards, and practice exams.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* University pills */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.55 }}
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginBottom: '40px' }}
+          >
+            {universities.map((uni, i) => (
+              <UniPill key={uni} name={uni} delay={0.55 + i * 0.07} />
+            ))}
+          </motion.div>
+
+          {/* CTA buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -258,16 +347,14 @@ export default function Home() {
               whileHover={{ scale: 1.05, background: 'var(--teal-dark)' }}
               whileTap={{ scale: 0.97 }}
               style={{
-                background: 'var(--teal)', color: 'white',
-                border: 'none', borderRadius: '12px',
-                padding: '16px 32px', fontSize: '16px',
-                fontWeight: '700', cursor: 'pointer',
+                background: 'var(--teal)', color: 'white', border: 'none',
+                borderRadius: '12px', padding: '16px 32px',
+                fontSize: '16px', fontWeight: '700', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: '8px',
                 boxShadow: '0 8px 24px rgba(74,155,142,0.35)',
               }}
             >
-              Start for Free
-              <ArrowRight size={18} />
+              Start for Free <ArrowRight size={18} />
             </motion.button>
 
             <motion.button
@@ -276,8 +363,7 @@ export default function Home() {
               style={{
                 background: 'transparent', color: 'var(--text-dark)',
                 border: '2px solid rgba(74,155,142,0.4)', borderRadius: '12px',
-                padding: '16px 32px', fontSize: '16px',
-                fontWeight: '600', cursor: 'pointer',
+                padding: '16px 32px', fontSize: '16px', fontWeight: '600', cursor: 'pointer',
               }}
             >
               See how it works
@@ -292,11 +378,11 @@ export default function Home() {
             style={{
               marginTop: '48px', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
-              gap: '8px', flexWrap: 'wrap',
+              gap: '10px', flexWrap: 'wrap',
             }}
           >
             <div style={{ display: 'flex' }}>
-              {['#4A9B8E','#5B7FA6','#6B9E7A','#4A9B8E','#357A6E'].map((c, i) => (
+              {['#4A9B8E', '#5B7FA6', '#6B9E7A', '#4A9B8E', '#357A6E'].map((c, i) => (
                 <div key={i} style={{
                   width: '32px', height: '32px', borderRadius: '50%',
                   background: c, border: '2px solid var(--off-white)',
@@ -304,12 +390,12 @@ export default function Home() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '11px', color: 'white', fontWeight: '700',
                 }}>
-                  {['A','B','C','D','E'][i]}
+                  {['A', 'B', 'C', 'D', 'E'][i]}
                 </div>
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="#EF9F27" color="#EF9F27" />)}
+              {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="#EF9F27" color="#EF9F27" />)}
             </div>
             <span style={{ fontSize: '13px', color: 'var(--text-mid)' }}>
               Join <strong>500+</strong> students already studying smarter
@@ -318,10 +404,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* STATS SECTION */}
+      {/* ── STATS ── */}
       <section style={{
-        background: 'var(--off-white)',
-        padding: '60px 24px',
+        background: 'var(--off-white)', padding: '60px 24px',
         borderTop: '1px solid rgba(74,155,142,0.1)',
         borderBottom: '1px solid rgba(74,155,142,0.1)',
       }}>
@@ -331,39 +416,47 @@ export default function Home() {
           gap: '40px',
         }}>
           <StatItem number="10K+" label="Past papers uploaded" delay={0} />
-          <StatItem number="6" label="Kenyan universities" delay={0.1} />
-          <StatItem number="Ksh 199" label="Per month — less than a text book" delay={0.2} />
+          <StatItem number="10+" label="Kenyan universities covered" delay={0.1} />
+          <StatItem number="Ksh 199" label="Per month — less than a textbook" delay={0.2} />
           <StatItem number="24/7" label="Mkato AI always available" delay={0.3} />
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section id="features" style={{ padding: '100px 24px', maxWidth: '1100px', margin: '0 auto' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          style={{ textAlign: 'center', marginBottom: '60px' }}
-        >
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '14px' }}>
-            Everything you need to pass
-          </h2>
-          <p style={{ fontSize: '17px', color: 'var(--text-mid)', maxWidth: '520px', margin: '0 auto' }}>
-            Not just a file dump — a full study platform built for how Kenyan students actually study.
-          </p>
-        </motion.div>
+      {/* ── FEATURES ── */}
+      <section id="features" style={{ padding: '100px 24px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            style={{ textAlign: 'center', marginBottom: '60px' }}
+          >
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '14px' }}>
+              Everything you need to pass
+            </h2>
+            <p style={{ fontSize: '17px', color: 'var(--text-mid)', maxWidth: '520px', margin: '0 auto' }}>
+              Not just a file dump — a full study platform built for how Kenyan students actually study.
+            </p>
+          </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-          <FeatureCard delay={0} icon={BookOpen} title="10,000+ Past Papers" desc="Search by university, course unit, and year. UoN, KU, JKUAT, Strathmore and more. Download instantly." />
-          <FeatureCard delay={0.1} icon={Brain} title="Mkato AI Tutor" desc="Ask any question about a past paper. Get step-by-step explanations in English or Kiswahili." color="var(--blue-light)" />
-          <FeatureCard delay={0.2} icon={Zap} title="Pass Predictor" desc="See which topics appear most in past papers. Know exactly what to focus on before your exam." />
-          <FeatureCard delay={0.3} icon={CheckCircle} title="Answer Marking" desc="Write your answer and Mkato AI marks it against the marking scheme. Like having a personal examiner." color="var(--blue-light)" />
-          <FeatureCard delay={0.4} icon={Users} title="Study Rooms" desc="Study with your classmates in real-time. Share notes, discuss questions, and prepare together." />
-          <FeatureCard delay={0.5} icon={Star} title="Smart Flashcards" desc="AI generates flashcards from any past paper automatically. Study on the matatu with no data needed." color="var(--blue-light)" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+            <FeatureCard delay={0} icon={BookOpen} title="10,000+ Past Papers"
+              desc="Search by university, course unit, and year. UoN, KU, JKUAT, KCA, Strathmore, USIU and more. Download instantly." />
+            <FeatureCard delay={0.1} icon={Brain} title="Mkato AI Tutor"
+              desc="Ask any question about a past paper. Get step-by-step explanations in English or Kiswahili." color="var(--blue-light)" />
+            <FeatureCard delay={0.2} icon={Zap} title="Pass Predictor"
+              desc="See which topics appear most in past papers. Know exactly what to focus on before your exam." />
+            <FeatureCard delay={0.3} icon={CheckCircle} title="Answer Marking"
+              desc="Write your answer and Mkato AI marks it against the marking scheme. Like having a personal examiner." color="var(--blue-light)" />
+            <FeatureCard delay={0.4} icon={Users} title="Study Rooms"
+              desc="Study with your classmates in real-time. Share notes, discuss questions, and prepare together." />
+            <FeatureCard delay={0.5} icon={Star} title="Smart Flashcards"
+              desc="AI generates flashcards from any past paper automatically. Study on the matatu with no data needed." color="var(--blue-light)" />
+          </div>
         </div>
       </section>
 
-      {/* PRICING SECTION */}
+      {/* ── PRICING ── */}
       <section id="pricing" style={{
         background: 'var(--off-white)', padding: '100px 24px',
         borderTop: '1px solid rgba(74,155,142,0.1)',
@@ -382,122 +475,24 @@ export default function Home() {
 
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '24px', maxWidth: '900px', margin: '0 auto',
+          gap: '24px', maxWidth: '960px', margin: '0 auto',
         }}>
-          {/* Free plan */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            style={{
-              background: 'var(--eggshell)', borderRadius: '20px',
-              padding: '36px 28px', border: '1px solid rgba(74,155,142,0.2)',
-            }}
-          >
-            <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-mid)', marginBottom: '8px' }}>FREE</p>
-            <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '6px' }}>Ksh 0</p>
-            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '28px' }}>Forever free</p>
-            {['3 paper downloads/day', '5 Mkato AI queries/day', 'Upload papers to earn days', 'Basic notes editor'].map(f => (
-              <div key={f} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
-                <CheckCircle size={16} color="var(--teal)" />
-                <span style={{ fontSize: '14px', color: 'var(--text-mid)' }}>{f}</span>
-              </div>
-            ))}
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                width: '100%', marginTop: '24px', padding: '14px',
-                background: 'transparent', border: '2px solid var(--teal)',
-                borderRadius: '10px', color: 'var(--teal)',
-                fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-              }}
-            >
-              Start Free
-            </motion.button>
-          </motion.div>
-
-          {/* Paid plan */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            style={{
-              background: 'var(--teal)', borderRadius: '20px',
-              padding: '36px 28px',
-              boxShadow: '0 20px 50px rgba(74,155,142,0.35)',
-              position: 'relative', overflow: 'hidden',
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: '16px', right: '16px',
-              background: '#EF9F27', borderRadius: '100px',
-              padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: 'white',
-            }}>
-              MOST POPULAR
-            </div>
-            <p style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>STUDENT PLAN</p>
-            <p style={{ fontSize: '42px', fontWeight: '800', color: 'white', marginBottom: '6px' }}>Ksh 199</p>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '28px' }}>per month • cancel anytime</p>
-            {['Unlimited paper downloads', 'Unlimited Mkato AI', 'Answer marking', 'Flashcard generator', 'Study rooms', 'Offline access', 'Pass Predictor'].map(f => (
-              <div key={f} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
-                <CheckCircle size={16} color="rgba(255,255,255,0.9)" />
-                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)' }}>{f}</span>
-              </div>
-            ))}
-            <motion.button
-              whileHover={{ scale: 1.03, background: '#2C8C80' }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                width: '100%', marginTop: '24px', padding: '14px',
-                background: 'white', border: 'none',
-                borderRadius: '10px', color: 'var(--teal)',
-                fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-              }}
-            >
-              Get Student Plan
-            </motion.button>
-          </motion.div>
-
-          {/* Crammer plan */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-            style={{
-              background: 'var(--eggshell)', borderRadius: '20px',
-              padding: '36px 28px', border: '1px solid rgba(74,155,142,0.2)',
-            }}
-          >
-            <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-mid)', marginBottom: '8px' }}>EXAM CRAMMER</p>
-            <p style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '6px' }}>Ksh 499</p>
-            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '28px' }}>one-time • 30 days • no auto-renew</p>
-            {['Everything in Student Plan', '30 days full access', 'No subscription needed', 'Perfect before exams'].map(f => (
-              <div key={f} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
-                <CheckCircle size={16} color="var(--teal)" />
-                <span style={{ fontSize: '14px', color: 'var(--text-mid)' }}>{f}</span>
-              </div>
-            ))}
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                width: '100%', marginTop: '24px', padding: '14px',
-                background: 'transparent', border: '2px solid var(--teal)',
-                borderRadius: '10px', color: 'var(--teal)',
-                fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-              }}
-            >
-              Get Crammer Pack
-            </motion.button>
-          </motion.div>
+          <PricingCard
+            title="FREE" price="Ksh 0" sub="Forever free" cta="Start Free" delay={0.1}
+            features={['3 paper downloads/day', '5 Mkato AI queries/day', 'Upload papers to earn days', 'Basic notes editor']}
+          />
+          <PricingCard
+            title="STUDENT PLAN" price="Ksh 199" sub="per month • cancel anytime" cta="Get Student Plan" highlight delay={0.2}
+            features={['Unlimited paper downloads', 'Unlimited Mkato AI', 'Answer marking', 'Flashcard generator', 'Study rooms', 'Offline access', 'Pass Predictor']}
+          />
+          <PricingCard
+            title="EXAM CRAMMER" price="Ksh 499" sub="one-time • 30 days • no auto-renew" cta="Get Crammer Pack" delay={0.3}
+            features={['Everything in Student Plan', '30 days full access', 'No subscription needed', 'Perfect before exams']}
+          />
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer style={{
         background: 'var(--text-dark)', color: 'white',
         padding: '48px 24px', textAlign: 'center',
@@ -507,6 +502,13 @@ export default function Home() {
           <span style={{ fontWeight: '800', fontSize: '18px', color: 'var(--teal)' }}>mkato.study</span>
         </div>
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>Making things simpler.</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '16px 0', flexWrap: 'wrap' }}>
+          {['Privacy Policy', 'Terms of Service', 'Contact Us'].map(link => (
+            <a key={link} href="#" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
+              {link}
+            </a>
+          ))}
+        </div>
         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>© 2025 Mkato.study. Built in Kenya 🇰🇪</p>
       </footer>
 
