@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { BookOpen, Brain, Zap, Users, ArrowRight, Star, CheckCircle } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 // ─── Typing animation ───────────────────────────────────────────────────────
 const typingPhrases = [
@@ -256,17 +257,19 @@ export default function Home() {
         </div>
 
         {/* CTA */}
-        <motion.button
-          whileHover={{ scale: 1.05, background: 'var(--teal-dark)' }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            background: 'var(--teal)', color: 'white', border: 'none',
-            borderRadius: '10px', padding: '10px 20px',
-            fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-          }}
-        >
-          Get Started Free
-        </motion.button>
+        <Link href="/login" style={{ textDecoration: 'none' }}>
+          <motion.button
+            whileHover={{ scale: 1.05, background: 'var(--teal-dark)' }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              background: 'var(--teal)', color: 'white', border: 'none',
+              borderRadius: '10px', padding: '10px 20px',
+              fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+            }}
+          >
+            Get Started Free
+          </motion.button>
+        </Link>
       </motion.nav>
 
       {/* ── HERO ── */}

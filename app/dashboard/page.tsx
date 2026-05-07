@@ -322,18 +322,20 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Upgrade badge */}
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                background: 'var(--teal)', borderRadius: '10px',
-                padding: '10px 18px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '6px',
-              }}
-            >
-              <Zap size={14} color="white" />
-              <span style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>Upgrade — Ksh 199</span>
-            </motion.div>
+            <Link href="/upgrade" style={{ textDecoration: 'none' }}>
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  background: 'var(--teal)', borderRadius: '10px',
+                  padding: '10px 18px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                }}
+              >
+                <Zap size={14} color="white" />
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>Upgrade — Ksh 199</span>
+              </motion.div>
+            </Link>
           </div>
         </motion.div>
 
@@ -467,18 +469,20 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.03, background: 'var(--teal-dark)' }}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  width: '100%', padding: '12px',
-                  background: 'var(--teal)', border: 'none',
-                  borderRadius: '10px', color: 'white',
-                  fontWeight: '700', fontSize: '14px', cursor: 'pointer',
-                }}
-              >
-                Upgrade — Ksh 199/mo
-              </motion.button>
+              <Link href="/upgrade" style={{ textDecoration: 'none', display: 'block' }}>
+                <motion.button
+                  whileHover={{ scale: 1.03, background: 'var(--teal-dark)' }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    width: '100%', padding: '12px',
+                    background: 'var(--teal)', border: 'none',
+                    borderRadius: '10px', color: 'white',
+                    fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+                  }}
+                >
+                  Upgrade — Ksh 199/mo
+                </motion.button>
+              </Link>
               <p style={{ fontSize: '11px', color: 'var(--text-light)', textAlign: 'center', marginTop: '8px' }}>
                 Or upload a paper to earn 7 free days
               </p>
