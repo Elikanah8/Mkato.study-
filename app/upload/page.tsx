@@ -1,14 +1,28 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useCallback } from 'react'
-import { Upload, FileText, X, CheckCircle, ChevronLeft, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Download, Eye, BookOpen, Lock, FileText, X, ChevronLeft, ArrowUpRight, Loader } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '../lib/supabase'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Paper = {
+    id: string
+    title: string
+    university: string
+    course_name: string
+    course_code: string
+    year: number
+    downloads: number
+    file_url: string
+    is_premium: boolean
+    is_approved: boolean
+}
+
 const UNIVERSITIES = [
+    'All Universities',
     'University of Nairobi',
     'Kenyatta University',
     'JKUAT',
@@ -19,190 +33,257 @@ const UNIVERSITIES = [
     'Egerton University',
 ]
 
-const YEARS = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - i).toString())
+const YEARS = ['All Years', '2024', '2023', '2022', '2021', '2020', '2019', '2018']
 
 const NAV = [
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Find Papers', href: '/papers' },
+    { label: 'Find Papers', href: '/papers', active: true },
     { label: 'Mkato AI', href: '/ai' },
-    { label: 'Upload Paper', href: '/upload', active: true },
+    { label: 'Upload Paper', href: '/upload' },
     { label: 'Flashcards', href: '/flashcards' },
     { label: 'Pass Predictor', href: '/predictor' },
     { label: 'Study Planner', href: '/planner' },
     { label: 'My Notes', href: '/notes' },
 ]
 
-// ─── Input component ──────────────────────────────────────────────────────────
-function Field({
-    label, required, children, hint,
-}: {
-    label: string
-    required?: boolean
-    children: React.ReactNode
-    hint?: string
-}) {
+// ─── Paper card ───────────────────────────────────────────────────────────────
+function PaperCard({ paper, index }: { paper: Paper; index: number }) {
+    const [downloading, setDownloading] = useState(false)
+    const supabase = createClient()
+
+    async function handleDownload() {
+        if (paper.is_premium || downloading || !paper.file_url) return
+        setDownloading(true)
+
+        // Log download
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            await supabase.from('downloads').insert({
+                user_id: user.id,
+                paper_id: paper.id,
+            })
+            await supabase
+                .from('papers')
+                .update({ downloads: (paper.downloads || 0) + 1 })
+                .eq('id', paper.id)
+        }
+
+        // Open file
+        window.open(paper.file_url, '_blank')
+        setDownloading(false)
+    }
+
     return (
-        <div style={{ marginBottom: '20px' }}>
-            <label style={{
-                display: 'block', fontSize: '13px',
-                fontWeight: '600', color: 'var(--text-dark)',
-                marginBottom: '6px',
+        <motion.article
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, duration: 0.35 }}
+            style={{
+                background: 'var(--off-white)',
+                borderRadius: '14px',
+                padding: '22px',
+                border: '1px solid rgba(74,155,142,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+            }}
+        >
+            {/* Top row */}
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{
+                    width: '42px', height: '42px', borderRadius: '10px', flexShrink: 0,
+                    background: paper.is_premium ? '#FFF4E6' : 'var(--teal-light)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <FileText size={18} color={paper.is_premium ? '#C87A00' : 'var(--teal)'} />
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                        fontSize: '14px', fontWeight: '600', color: 'var(--text-dark)',
+                        lineHeight: 1.35, marginBottom: '4px',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                        {paper.title}
+                    </p>
+                    <p style={{ fontSize: '12px', color: 'var(--teal)', fontWeight: '600' }}>
+                        {paper.course_code}
+                    </p>
+                </div>
+
+                {paper.is_premium && (
+                    <span style={{
+                        fontSize: '10px', fontWeight: '700', letterSpacing: '0.06em',
+                        color: '#C87A00', background: '#FFF4E6',
+                        border: '1px solid rgba(200,122,0,0.2)',
+                        borderRadius: '6px', padding: '3px 8px', flexShrink: 0,
+                    }}>
+                        PREMIUM
+                    </span>
+                )}
+            </div>
+
+            {/* Meta grid */}
+            <div style={{
+                display: 'flex', background: 'var(--eggshell)',
+                borderRadius: '8px', overflow: 'hidden',
             }}>
-                {label}
-                {required && <span style={{ color: 'var(--teal)', marginLeft: '3px' }}>*</span>}
-            </label>
-            {children}
-            {hint && (
-                <p style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '5px' }}>
-                    {hint}
-                </p>
-            )}
-        </div>
+                {[
+                    { label: 'University', value: paper.university.replace('University of ', 'U. of ') },
+                    { label: 'Year', value: paper.year?.toString() },
+                    { label: 'Course', value: paper.course_name },
+                    { label: 'Downloads', value: (paper.downloads || 0).toLocaleString() },
+                ].map((meta, i) => (
+                    <div key={meta.label} style={{
+                        flex: '1 1 0', padding: '8px 10px',
+                        borderRight: i < 3 ? '1px solid rgba(74,155,142,0.1)' : 'none',
+                    }}>
+                        <p style={{
+                            fontSize: '10px', color: 'var(--text-light)', fontWeight: '500',
+                            marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em',
+                        }}>
+                            {meta.label}
+                        </p>
+                        <p style={{
+                            fontSize: '12px', color: 'var(--text-dark)', fontWeight: '600',
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>
+                            {meta.value}
+                        </p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                    onClick={() => paper.file_url && window.open(paper.file_url, '_blank')}
+                    style={{
+                        flex: 1, padding: '9px 0',
+                        background: 'transparent',
+                        border: '1.5px solid rgba(74,155,142,0.2)',
+                        borderRadius: '9px', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: '600', color: 'var(--text-mid)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        transition: 'border-color 0.15s, color 0.15s',
+                    }}
+                    onMouseEnter={e => {
+                        const b = e.currentTarget as HTMLButtonElement
+                        b.style.borderColor = 'var(--teal)'
+                        b.style.color = 'var(--teal)'
+                    }}
+                    onMouseLeave={e => {
+                        const b = e.currentTarget as HTMLButtonElement
+                        b.style.borderColor = 'rgba(74,155,142,0.2)'
+                        b.style.color = 'var(--text-mid)'
+                    }}
+                >
+                    <Eye size={14} /> Preview
+                </button>
+
+                <button
+                    onClick={handleDownload}
+                    disabled={paper.is_premium || downloading}
+                    style={{
+                        flex: 1, padding: '9px 0',
+                        background: paper.is_premium ? '#FFF4E6' : 'var(--teal)',
+                        border: 'none', borderRadius: '9px',
+                        cursor: paper.is_premium ? 'default' : 'pointer',
+                        fontSize: '13px', fontWeight: '600',
+                        color: paper.is_premium ? '#C87A00' : 'white',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        opacity: downloading ? 0.75 : 1,
+                        transition: 'opacity 0.15s',
+                    }}
+                >
+                    {downloading ? (
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+                            style={{
+                                width: '13px', height: '13px',
+                                border: '2px solid rgba(255,255,255,0.3)',
+                                borderTop: '2px solid white', borderRadius: '50%',
+                            }}
+                        />
+                    ) : paper.is_premium ? (
+                        <><Lock size={13} /> Unlock</>
+                    ) : (
+                        <><Download size={13} /> Download</>
+                    )}
+                </button>
+            </div>
+        </motion.article>
     )
 }
 
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 14px',
-    background: 'var(--eggshell)',
-    border: '1.5px solid rgba(74,155,142,0.18)',
-    borderRadius: '9px',
-    fontSize: '13px',
-    color: 'var(--text-dark)',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-    fontFamily: 'inherit',
+// ─── Filter select ─────────────────────────────────────────────────────────────
+function FilterSelect({ value, onChange, options }: {
+    value: string
+    onChange: (v: string) => void
+    options: string[]
+}) {
+    return (
+        <select
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            style={{
+                padding: '9px 32px 9px 12px',
+                background: 'var(--off-white)',
+                border: '1.5px solid rgba(74,155,142,0.18)',
+                borderRadius: '9px', fontSize: '13px',
+                fontWeight: '500', color: 'var(--text-dark)',
+                outline: 'none', cursor: 'pointer',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A8A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 10px center',
+            }}
+        >
+            {options.map(o => <option key={o}>{o}</option>)}
+        </select>
+    )
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-export default function UploadPage() {
-    const [file, setFile] = useState<File | null>(null)
-    const [dragOver, setDragOver] = useState(false)
-    const [uploading, setUploading] = useState(false)
-    const [success, setSuccess] = useState(false)
-    const [error, setError] = useState('')
-    const [progress, setProgress] = useState(0)
-
-    const [title, setTitle] = useState('')
-    const [university, setUniversity] = useState('')
-    const [courseName, setCourseName] = useState('')
-    const [courseCode, setCourseCode] = useState('')
-    const [year, setYear] = useState('')
+export default function PapersPage() {
+    const [papers, setPapers] = useState<Paper[]>([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
+    const [university, setUniversity] = useState('All Universities')
+    const [year, setYear] = useState('All Years')
 
     const supabase = createClient()
 
-    // ── Drag and drop ───────────────────────────────────────────────────────────
-    const handleDrop = useCallback((e: React.DragEvent) => {
-        e.preventDefault()
-        setDragOver(false)
-        const dropped = e.dataTransfer.files[0]
-        if (dropped) validateAndSetFile(dropped)
+    useEffect(() => {
+        fetchPapers()
     }, [])
 
-    function validateAndSetFile(f: File) {
-        setError('')
-        if (f.type !== 'application/pdf') {
-            setError('Only PDF files are accepted.')
-            return
-        }
-        if (f.size > 10 * 1024 * 1024) {
-            setError('File size must be under 10MB.')
-            return
-        }
-        setFile(f)
+    async function fetchPapers() {
+        setLoading(true)
+        const { data, error } = await supabase
+            .from('papers')
+            .select('*')
+            .eq('is_approved', true)
+            .order('created_at', { ascending: false })
+
+        if (!error && data) setPapers(data)
+        setLoading(false)
     }
 
-    function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
-        const f = e.target.files?.[0]
-        if (f) validateAndSetFile(f)
-    }
+    const filtered = papers.filter(p => {
+        const q = search.toLowerCase()
+        return (
+            (p.title.toLowerCase().includes(q) ||
+                p.course_code.toLowerCase().includes(q) ||
+                p.course_name.toLowerCase().includes(q) ||
+                p.university.toLowerCase().includes(q)) &&
+            (university === 'All Universities' || p.university === university) &&
+            (year === 'All Years' || p.year?.toString() === year)
+        )
+    })
 
-    // ── Upload ──────────────────────────────────────────────────────────────────
-    async function handleUpload() {
-        if (!file || !title || !university || !courseName || !courseCode || !year) {
-            setError('Please fill in all required fields and select a file.')
-            return
-        }
-
-        setUploading(true)
-        setError('')
-        setProgress(0)
-
-        try {
-            // Get current user
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                setError('You must be logged in to upload papers.')
-                setUploading(false)
-                return
-            }
-
-            // Simulate progress
-            const progressInterval = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 85) { clearInterval(progressInterval); return prev }
-                    return prev + 15
-                })
-            }, 300)
-
-            // Upload file to Supabase storage
-            const fileName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`
-            const { data: storageData, error: storageError } = await supabase.storage
-                .from('papers')
-                .upload(fileName, file, { contentType: 'application/pdf' })
-
-            clearInterval(progressInterval)
-
-            if (storageError) throw storageError
-
-            setProgress(90)
-
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('papers')
-                .getPublicUrl(fileName)
-
-            // Save paper record to database
-            const { error: dbError } = await supabase
-                .from('papers')
-                .insert({
-                    title,
-                    university,
-                    course_name: courseName,
-                    course_code: courseCode,
-                    year: parseInt(year),
-                    file_url: publicUrl,
-                    file_size: file.size,
-                    uploaded_by: user.id,
-                    is_approved: false,
-                    is_premium: false,
-                })
-
-            if (dbError) throw dbError
-
-            setProgress(100)
-            setSuccess(true)
-
-        } catch (err: any) {
-            console.error(err)
-            setError(err.message || 'Upload failed. Please try again.')
-        } finally {
-            setUploading(false)
-        }
-    }
-
-    function resetForm() {
-        setFile(null)
-        setTitle('')
-        setUniversity('')
-        setCourseName('')
-        setCourseCode('')
-        setYear('')
-        setSuccess(false)
-        setError('')
-        setProgress(0)
-    }
+    const hasFilters = search || university !== 'All Universities' || year !== 'All Years'
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--eggshell)' }}>
@@ -253,24 +334,10 @@ export default function UploadPage() {
                         </Link>
                     ))}
                 </nav>
-
-                {/* Earn points notice */}
-                <div style={{
-                    background: 'var(--teal-light)',
-                    borderRadius: '10px', padding: '14px',
-                    border: '1px solid rgba(74,155,142,0.2)',
-                }}>
-                    <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--teal)', marginBottom: '4px' }}>
-                        Earn free premium
-                    </p>
-                    <p style={{ fontSize: '11px', color: 'var(--teal)', lineHeight: 1.5, opacity: 0.8 }}>
-                        Upload an approved paper and get 7 days of free premium access.
-                    </p>
-                </div>
             </aside>
 
             {/* Main */}
-            <main style={{ marginLeft: '220px', flex: 1, padding: '36px 40px', maxWidth: '800px' }}>
+            <main style={{ marginLeft: '220px', flex: 1, padding: '36px 40px' }}>
 
                 {/* Header */}
                 <div style={{ marginBottom: '28px' }}>
@@ -280,341 +347,187 @@ export default function UploadPage() {
                     }}>
                         <ChevronLeft size={14} /> Dashboard
                     </Link>
-                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '4px' }}>
-                        Upload a Past Paper
-                    </h1>
-                    <p style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-                        Help other students and earn 7 days of free premium access when your paper is approved.
-                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                            <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '4px' }}>
+                                Past Papers
+                            </h1>
+                            <p style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+                                {loading ? 'Loading...' : `${filtered.length} of ${papers.length} papers`}
+                            </p>
+                        </div>
+
+                        <Link href="/upload" style={{ textDecoration: 'none' }}>
+                            <button style={{
+                                padding: '10px 18px', background: 'var(--teal)',
+                                border: 'none', borderRadius: '10px', cursor: 'pointer',
+                                fontSize: '13px', fontWeight: '600', color: 'white',
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                            }}>
+                                Upload a Paper <ArrowUpRight size={14} />
+                            </button>
+                        </Link>
+                    </div>
                 </div>
 
-                <AnimatePresence mode="wait">
-
-                    {/* Success state */}
-                    {success ? (
-                        <motion.div
-                            key="success"
-                            initial={{ opacity: 0, scale: 0.97 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0 }}
+                {/* Search + filters */}
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative', flex: '1 1 280px' }}>
+                        <Search size={15} color="var(--text-light)" style={{
+                            position: 'absolute', left: '13px',
+                            top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none',
+                        }} />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Search by course name, unit code, or topic..."
                             style={{
-                                background: 'var(--off-white)', borderRadius: '16px',
-                                padding: '60px 40px', textAlign: 'center',
-                                border: '1px solid rgba(74,155,142,0.15)',
+                                width: '100%', padding: '10px 36px 10px 36px',
+                                background: 'var(--off-white)',
+                                border: '1.5px solid rgba(74,155,142,0.18)',
+                                borderRadius: '9px', fontSize: '13px',
+                                color: 'var(--text-dark)', outline: 'none',
+                                boxSizing: 'border-box', transition: 'border-color 0.15s',
                             }}
-                        >
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                                style={{
-                                    width: '64px', height: '64px', borderRadius: '50%',
-                                    background: 'var(--teal-light)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    margin: '0 auto 20px',
-                                }}
-                            >
-                                <CheckCircle size={32} color="var(--teal)" />
-                            </motion.div>
-
-                            <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '8px' }}>
-                                Paper submitted successfully
-                            </h2>
-                            <p style={{ fontSize: '14px', color: 'var(--text-mid)', marginBottom: '6px', lineHeight: 1.6 }}>
-                                Your paper is under review. Once approved it will appear in the library and you will receive 7 days of free premium access.
-                            </p>
-                            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '32px' }}>
-                                Review usually takes 24-48 hours.
-                            </p>
-
-                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <button
-                                    onClick={resetForm}
+                            onFocus={e => e.target.style.borderColor = 'var(--teal)'}
+                            onBlur={e => e.target.style.borderColor = 'rgba(74,155,142,0.18)'}
+                        />
+                        <AnimatePresence>
+                            {search && (
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    onClick={() => setSearch('')}
                                     style={{
-                                        padding: '11px 24px', background: 'var(--teal)',
-                                        border: 'none', borderRadius: '10px', cursor: 'pointer',
-                                        fontSize: '14px', fontWeight: '600', color: 'white',
+                                        position: 'absolute', right: '11px', top: '50%',
+                                        transform: 'translateY(-50%)', background: 'none',
+                                        border: 'none', cursor: 'pointer', padding: '2px',
+                                        display: 'flex', alignItems: 'center',
                                     }}
                                 >
-                                    Upload another paper
-                                </button>
-                                <Link href="/papers" style={{ textDecoration: 'none' }}>
-                                    <button style={{
-                                        padding: '11px 24px', background: 'transparent',
-                                        border: '1.5px solid rgba(74,155,142,0.25)',
-                                        borderRadius: '10px', cursor: 'pointer',
-                                        fontSize: '14px', fontWeight: '600', color: 'var(--text-mid)',
-                                    }}>
-                                        Browse papers
-                                    </button>
-                                </Link>
-                            </div>
-                        </motion.div>
+                                    <X size={14} color="var(--text-light)" />
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
-                    ) : (
+                    <FilterSelect value={university} onChange={setUniversity} options={UNIVERSITIES} />
+                    <FilterSelect value={year} onChange={setYear} options={YEARS} />
 
-                        /* Upload form */
+                    <AnimatePresence>
+                        {hasFilters && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                onClick={() => {
+                                    setSearch('')
+                                    setUniversity('All Universities')
+                                    setYear('All Years')
+                                }}
+                                style={{
+                                    padding: '9px 14px', background: 'transparent',
+                                    border: '1.5px solid rgba(226,75,74,0.25)',
+                                    borderRadius: '9px', cursor: 'pointer',
+                                    fontSize: '13px', fontWeight: '500', color: '#791F1F',
+                                    display: 'flex', alignItems: 'center', gap: '5px',
+                                }}
+                            >
+                                <X size={12} /> Clear
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Loading state */}
+                {loading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '80px' }}>
                         <motion.div
-                            key="form"
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                        >
-                            {/* Drop zone */}
-                            <div
-                                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-                                onDragLeave={() => setDragOver(false)}
-                                onDrop={handleDrop}
-                                onClick={() => !file && document.getElementById('file-input')?.click()}
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            style={{
+                                width: '32px', height: '32px',
+                                border: '3px solid rgba(74,155,142,0.2)',
+                                borderTop: '3px solid var(--teal)', borderRadius: '50%',
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <AnimatePresence mode="wait">
+                        {filtered.length > 0 ? (
+                            <motion.div
+                                key="grid"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 style={{
-                                    border: `2px dashed ${dragOver ? 'var(--teal)' : file ? 'var(--teal)' : 'rgba(74,155,142,0.25)'}`,
-                                    borderRadius: '14px',
-                                    padding: '40px 24px',
-                                    textAlign: 'center',
-                                    background: dragOver ? 'var(--teal-light)' : file ? 'var(--teal-light)' : 'var(--off-white)',
-                                    cursor: file ? 'default' : 'pointer',
-                                    transition: 'all 0.2s',
-                                    marginBottom: '28px',
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                    gap: '14px',
                                 }}
                             >
-                                <input
-                                    id="file-input"
-                                    type="file"
-                                    accept=".pdf"
-                                    onChange={handleFileInput}
-                                    style={{ display: 'none' }}
-                                />
-
-                                {file ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                                        <div style={{
-                                            width: '44px', height: '44px', borderRadius: '10px',
-                                            background: 'var(--teal)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            flexShrink: 0,
-                                        }}>
-                                            <FileText size={22} color="white" />
-                                        </div>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '3px' }}>
-                                                {file.name}
-                                            </p>
-                                            <p style={{ fontSize: '12px', color: 'var(--text-light)' }}>
-                                                {(file.size / 1024 / 1024).toFixed(2)} MB
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={e => { e.stopPropagation(); setFile(null) }}
-                                            style={{
-                                                background: 'none', border: 'none',
-                                                cursor: 'pointer', padding: '4px',
-                                                marginLeft: '8px',
-                                                display: 'flex', alignItems: 'center',
-                                            }}
-                                        >
-                                            <X size={16} color="var(--text-mid)" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div style={{
-                                            width: '48px', height: '48px', borderRadius: '12px',
-                                            background: 'var(--teal-light)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            margin: '0 auto 14px',
-                                        }}>
-                                            <Upload size={22} color="var(--teal)" />
-                                        </div>
-                                        <p style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '6px' }}>
-                                            Drop your PDF here or click to browse
-                                        </p>
-                                        <p style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-                                            PDF files only — maximum 10MB
-                                        </p>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Form fields */}
-                            <div style={{
-                                background: 'var(--off-white)', borderRadius: '14px',
-                                padding: '28px', border: '1px solid rgba(74,155,142,0.1)',
-                            }}>
-                                <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '20px' }}>
-                                    Paper details
-                                </h2>
-
-                                <Field label="Paper title" required hint="e.g. Introduction to Microeconomics">
-                                    <input
-                                        type="text"
-                                        value={title}
-                                        onChange={e => setTitle(e.target.value)}
-                                        placeholder="Enter the full paper title"
-                                        style={inputStyle}
-                                        onFocus={e => e.target.style.borderColor = 'var(--teal)'}
-                                        onBlur={e => e.target.style.borderColor = 'rgba(74,155,142,0.18)'}
-                                    />
-                                </Field>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <Field label="University" required>
-                                        <select
-                                            value={university}
-                                            onChange={e => setUniversity(e.target.value)}
-                                            style={{
-                                                ...inputStyle,
-                                                appearance: 'none',
-                                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A8A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                                backgroundRepeat: 'no-repeat',
-                                                backgroundPosition: 'right 12px center',
-                                                paddingRight: '32px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <option value="">Select university</option>
-                                            {UNIVERSITIES.map(u => <option key={u} value={u}>{u}</option>)}
-                                        </select>
-                                    </Field>
-
-                                    <Field label="Year" required>
-                                        <select
-                                            value={year}
-                                            onChange={e => setYear(e.target.value)}
-                                            style={{
-                                                ...inputStyle,
-                                                appearance: 'none',
-                                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A8A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                                backgroundRepeat: 'no-repeat',
-                                                backgroundPosition: 'right 12px center',
-                                                paddingRight: '32px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <option value="">Select year</option>
-                                            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                        </select>
-                                    </Field>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <Field label="Course name" required hint="e.g. Financial Accounting">
-                                        <input
-                                            type="text"
-                                            value={courseName}
-                                            onChange={e => setCourseName(e.target.value)}
-                                            placeholder="Full course name"
-                                            style={inputStyle}
-                                            onFocus={e => e.target.style.borderColor = 'var(--teal)'}
-                                            onBlur={e => e.target.style.borderColor = 'rgba(74,155,142,0.18)'}
-                                        />
-                                    </Field>
-
-                                    <Field label="Course code" required hint="e.g. BCOM 202">
-                                        <input
-                                            type="text"
-                                            value={courseCode}
-                                            onChange={e => setCourseCode(e.target.value.toUpperCase())}
-                                            placeholder="e.g. BCOM 202"
-                                            style={inputStyle}
-                                            onFocus={e => e.target.style.borderColor = 'var(--teal)'}
-                                            onBlur={e => e.target.style.borderColor = 'rgba(74,155,142,0.18)'}
-                                        />
-                                    </Field>
-                                </div>
-
-                                {/* Error message */}
-                                <AnimatePresence>
-                                    {error && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -6 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: '8px',
-                                                background: '#FCEBEB',
-                                                border: '1px solid rgba(226,75,74,0.2)',
-                                                borderRadius: '9px', padding: '11px 14px',
-                                                marginBottom: '16px',
-                                            }}
-                                        >
-                                            <AlertCircle size={15} color="#791F1F" />
-                                            <p style={{ fontSize: '13px', color: '#791F1F', margin: 0 }}>{error}</p>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {/* Progress bar */}
-                                <AnimatePresence>
-                                    {uploading && (
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            style={{ marginBottom: '16px' }}
-                                        >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                <span style={{ fontSize: '12px', color: 'var(--text-mid)', fontWeight: '500' }}>
-                                                    Uploading...
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: 'var(--teal)', fontWeight: '600' }}>
-                                                    {progress}%
-                                                </span>
-                                            </div>
-                                            <div style={{ height: '6px', background: 'var(--eggshell)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                <motion.div
-                                                    animate={{ width: `${progress}%` }}
-                                                    transition={{ duration: 0.3 }}
-                                                    style={{ height: '100%', background: 'var(--teal)', borderRadius: '3px' }}
-                                                />
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {/* Submit button */}
-                                <button
-                                    onClick={handleUpload}
-                                    disabled={uploading}
-                                    style={{
-                                        width: '100%', padding: '13px',
-                                        background: uploading ? 'rgba(74,155,142,0.5)' : 'var(--teal)',
-                                        border: 'none', borderRadius: '10px',
-                                        cursor: uploading ? 'not-allowed' : 'pointer',
-                                        fontSize: '14px', fontWeight: '700', color: 'white',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                        transition: 'background 0.15s',
-                                    }}
-                                >
-                                    {uploading ? (
-                                        <>
-                                            <motion.div
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-                                                style={{
-                                                    width: '15px', height: '15px',
-                                                    border: '2px solid rgba(255,255,255,0.3)',
-                                                    borderTop: '2px solid white', borderRadius: '50%',
-                                                }}
-                                            />
-                                            Uploading...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Upload size={15} />
-                                            Submit Paper
-                                        </>
-                                    )}
-                                </button>
-
-                                <p style={{ fontSize: '11px', color: 'var(--text-light)', textAlign: 'center', marginTop: '10px', lineHeight: 1.5 }}>
-                                    Papers are reviewed before being made public. You will be notified once approved.
+                                {filtered.map((paper, i) => (
+                                    <PaperCard key={paper.id} paper={paper} index={i} />
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="empty"
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                style={{
+                                    textAlign: 'center', padding: '80px 24px',
+                                    background: 'var(--off-white)', borderRadius: '16px',
+                                    border: '1px dashed rgba(74,155,142,0.2)',
+                                }}
+                            >
+                                <BookOpen size={36} color="rgba(74,155,142,0.25)" style={{ marginBottom: '14px' }} />
+                                <p style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-mid)', marginBottom: '6px' }}>
+                                    {papers.length === 0 ? 'No papers yet' : 'No papers found'}
                                 </p>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '20px' }}>
+                                    {papers.length === 0
+                                        ? 'Be the first to upload a past paper and earn free premium access.'
+                                        : 'Try adjusting your search or filters'
+                                    }
+                                </p>
+                                {papers.length === 0 ? (
+                                    <Link href="/upload" style={{ textDecoration: 'none' }}>
+                                        <button style={{
+                                            background: 'var(--teal)', color: 'white',
+                                            border: 'none', borderRadius: '9px',
+                                            padding: '10px 22px', fontSize: '13px',
+                                            fontWeight: '600', cursor: 'pointer',
+                                        }}>
+                                            Upload the first paper
+                                        </button>
+                                    </Link>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            setSearch('')
+                                            setUniversity('All Universities')
+                                            setYear('All Years')
+                                        }}
+                                        style={{
+                                            background: 'var(--teal)', color: 'white',
+                                            border: 'none', borderRadius: '9px',
+                                            padding: '10px 22px', fontSize: '13px',
+                                            fontWeight: '600', cursor: 'pointer',
+                                        }}
+                                    >
+                                        Clear filters
+                                    </button>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                )}
             </main>
         </div>
     )
 }
-
