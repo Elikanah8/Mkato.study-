@@ -112,27 +112,29 @@ function PaperCard({ title, university, year, delay }: {
 }
 
 // ─── Quick action button ───────────────────────────────────────────────────────
-function QuickAction({ icon: Icon, label, desc, color, delay }: {
-  icon: any, label: string, desc: string, color: string, delay: number
+function QuickAction({ icon: Icon, label, desc, color, delay, href }: {
+  icon: any, label: string, desc: string, color: string, delay: number, href: string
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay }}
-      whileHover={{ scale: 1.03, boxShadow: '0 8px 24px rgba(74,155,142,0.15)' }}
-      whileTap={{ scale: 0.97 }}
-      style={{
-        background: color, borderRadius: '16px',
-        padding: '20px', cursor: 'pointer',
-        border: '1px solid rgba(74,155,142,0.15)',
-        transition: 'box-shadow 0.2s',
-      }}
-    >
-      <Icon size={24} color="var(--teal)" style={{ marginBottom: '12px' }} />
-      <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '4px' }}>{label}</p>
-      <p style={{ fontSize: '12px', color: 'var(--text-mid)', lineHeight: 1.5 }}>{desc}</p>
-    </motion.div>
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay }}
+        whileHover={{ scale: 1.03, boxShadow: '0 8px 24px rgba(74,155,142,0.15)' }}
+        whileTap={{ scale: 0.97 }}
+        style={{
+          background: color, borderRadius: '16px',
+          padding: '20px', cursor: 'pointer',
+          border: '1px solid rgba(74,155,142,0.15)',
+          transition: 'box-shadow 0.2s',
+        }}
+      >
+        <Icon size={24} color="var(--teal)" style={{ marginBottom: '12px' }} />
+        <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '4px' }}>{label}</p>
+        <p style={{ fontSize: '12px', color: 'var(--text-mid)', lineHeight: 1.5 }}>{desc}</p>
+      </motion.div>
+    </Link>
   )
 }
 
@@ -367,10 +369,10 @@ export default function Dashboard() {
                 Quick actions
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
-                <QuickAction icon={Search} label="Find Papers" desc="Search 10,000+ past papers" color="var(--teal-light)" delay={0.35} />
-                <QuickAction icon={Brain} label="Ask Mkato AI" desc="Get instant explanations" color="var(--blue-light)" delay={0.4} />
-                <QuickAction icon={Upload} label="Upload Paper" desc="Earn free premium days" color="#EAF3DE" delay={0.45} />
-                <QuickAction icon={Zap} label="Pass Predictor" desc="See likely exam topics" color="#FAEEDA" delay={0.5} />
+                <QuickAction icon={Search} label="Find Papers" desc="Search 10,000+ past papers" color="var(--teal-light)" delay={0.35} href="/papers" />
+                <QuickAction icon={Brain} label="Ask Mkato AI" desc="Get instant explanations" color="var(--blue-light)" delay={0.4} href="/ai" />
+                <QuickAction icon={Upload} label="Upload Paper" desc="Earn free premium days" color="#EAF3DE" delay={0.45} href="/upload" />
+                <QuickAction icon={Zap} label="Pass Predictor" desc="See likely exam topics" color="#FAEEDA" delay={0.5} href="/predictor" />
               </div>
             </motion.div>
 
