@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { BookOpen, Brain, Zap, Users, ArrowRight, Star, CheckCircle } from 'lucide-react'
+import { BookOpen, Brain, Zap, Users, ArrowRight, Star, CheckCircle, Sparkles, PenLine } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -106,31 +106,40 @@ function UniPill({ name, delay }) {
 }
 
 // ─── Feature card ────────────────────────────────────────────────────────────
-function FeatureCard({ icon: Icon, title, desc, delay, color }) {
+function FeatureCard({ icon: Icon, title, desc, delay, color, href }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay }}
-      whileHover={{ y: -6, boxShadow: '0 20px 40px rgba(74,155,142,0.15)' }}
-      style={{
-        background: 'var(--off-white)', borderRadius: '16px',
-        padding: '28px 24px', border: '1px solid rgba(74,155,142,0.15)',
-        cursor: 'default', transition: 'box-shadow 0.3s',
-      }}
-    >
-      <div style={{
-        width: '48px', height: '48px', borderRadius: '12px',
-        background: color || 'var(--teal-light)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: '16px',
-      }}>
-        <Icon size={24} color="var(--teal)" />
-      </div>
-      <h3 style={{ fontSize: '17px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-dark)' }}>{title}</h3>
-      <p style={{ fontSize: '14px', color: 'var(--text-mid)', lineHeight: '1.6' }}>{desc}</p>
-    </motion.div>
+    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay }}
+        whileHover={{ y: -6, boxShadow: '0 20px 40px rgba(74,155,142,0.18)', borderColor: 'rgba(74,155,142,0.4)' }}
+        style={{
+          background: 'var(--off-white)', borderRadius: '16px',
+          padding: '28px 24px', border: '1px solid rgba(74,155,142,0.15)',
+          cursor: 'pointer', transition: 'box-shadow 0.3s, border-color 0.3s',
+          height: '100%', position: 'relative',
+        }}
+      >
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '12px',
+          background: color || 'var(--teal-light)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '16px',
+        }}>
+          <Icon size={24} color="var(--teal)" />
+        </div>
+        <h3 style={{ fontSize: '17px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-dark)' }}>{title}</h3>
+        <p style={{ fontSize: '14px', color: 'var(--text-mid)', lineHeight: '1.6', marginBottom: '16px' }}>{desc}</p>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '4px',
+          fontSize: '13px', fontWeight: '600', color: 'var(--teal)',
+        }}>
+          Try it free <ArrowRight size={13} />
+        </div>
+      </motion.div>
+    </Link>
   )
 }
 
@@ -444,17 +453,23 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
             <FeatureCard delay={0} icon={BookOpen} title="10,000+ Past Papers"
-              desc="Search by university, course unit, and year. UoN, KU, JKUAT, KCA, Strathmore, USIU and more. Download instantly." />
+              desc="Search by university, course unit, and year. UoN, KU, JKUAT, KCA, Strathmore, USIU and more. Download instantly."
+              href="/login?redirect=/papers" />
             <FeatureCard delay={0.1} icon={Brain} title="Mkato AI Tutor"
-              desc="Ask any question about a past paper. Get step-by-step explanations in English or Kiswahili." color="var(--blue-light)" />
+              desc="Ask any question about a past paper. Get step-by-step explanations in English or Kiswahili."
+              color="var(--blue-light)" href="/login?redirect=/ai" />
             <FeatureCard delay={0.2} icon={Zap} title="Pass Predictor"
-              desc="See which topics appear most in past papers. Know exactly what to focus on before your exam." />
-            <FeatureCard delay={0.3} icon={CheckCircle} title="Answer Marking"
-              desc="Write your answer and Mkato AI marks it against the marking scheme. Like having a personal examiner." color="var(--blue-light)" />
+              desc="See which topics appear most in past papers. Know exactly what to focus on before your exam."
+              href="/login?redirect=/predictor" />
+            <FeatureCard delay={0.3} icon={PenLine} title="Answer Marking"
+              desc="Write your answer and Mkato AI marks it against the marking scheme. Like having a personal examiner."
+              color="var(--blue-light)" href="/login?redirect=/ai" />
             <FeatureCard delay={0.4} icon={Users} title="Study Rooms"
-              desc="Study with your classmates in real-time. Share notes, discuss questions, and prepare together." />
-            <FeatureCard delay={0.5} icon={Star} title="Smart Flashcards"
-              desc="AI generates flashcards from any past paper automatically. Study on the matatu with no data needed." color="var(--blue-light)" />
+              desc="Study with your classmates in real-time. Share notes, discuss questions, and prepare together."
+              href="/login?redirect=/dashboard" />
+            <FeatureCard delay={0.5} icon={Sparkles} title="Smart Flashcards"
+              desc="AI generates flashcards from any past paper automatically. Study on the matatu with no data needed."
+              color="var(--blue-light)" href="/login?redirect=/flashcards" />
           </div>
         </div>
       </section>
