@@ -1,8 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { BookOpen, Brain, Zap, Search, Upload, Star, LogOut, User, Bell, TrendingUp, Clock, Award, ChevronRight, FileText } from 'lucide-react'
+import { BookOpen, Brain, Zap, Search, Upload, Star, LogOut, User, Bell, TrendingUp, Clock, Award, ChevronRight, FileText, X, CheckCheck, Sparkles, GiftIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '../lib/supabase'
@@ -12,6 +12,187 @@ type UserProfile = {
   email: string
   full_name?: string
   avatar_url?: string
+}
+
+type Notification = {
+  id: string
+  icon: 'bell' | 'gift' | 'sparkles' | 'zap'
+  title: string
+  body: string
+  time: string
+  read: boolean
+  href?: string
+}
+
+const INITIAL_NOTIFICATIONS: Notification[] = [
+  {
+    id: '1',
+    icon: 'sparkles',
+    title: 'Welcome to Mkato.study! 🎉',
+    body: 'You have 3 free paper downloads and 5 AI queries waiting for you today.',
+    time: 'Just now',
+    read: false,
+    href: '/papers',
+  },
+  {
+    id: '2',
+    icon: 'gift',
+    title: 'Earn 7 free premium days',
+    body: 'Upload a past paper you have and get 7 days of unlimited access instantly.',
+    time: '2 min ago',
+    read: false,
+    href: '/upload',
+  },
+  {
+    id: '3',
+    icon: 'zap',
+    title: 'Pass Predictor is ready',
+    body: 'See which topics appear most across 5 years of past papers before your exam.',
+    time: '1 hr ago',
+    read: false,
+    href: '/predictor',
+  },
+  {
+    id: '4',
+    icon: 'bell',
+    title: 'Tip: Study in short bursts',
+    body: 'Research shows 25-minute focused sessions beat 3-hour cramming. Try it today.',
+    time: 'Today',
+    read: true,
+  },
+]
+
+// ─── Notification panel ───────────────────────────────────────────────────────
+function NotificationPanel({
+  notifs,
+  onRead,
+  onReadAll,
+  onClose,
+}: {
+  notifs: Notification[]
+  onRead: (id: string) => void
+  onReadAll: () => void
+  onClose: () => void
+}) {
+  const iconMap = {
+    bell: Bell,
+    gift: GiftIcon,
+    sparkles: Sparkles,
+    zap: Zap,
+  }
+  const colorMap = {
+    bell: 'var(--teal-light)',
+    gift: '#FAEEDA',
+    sparkles: 'var(--blue-light)',
+    zap: '#EAF3DE',
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+      transition={{ duration: 0.18 }}
+      style={{
+        position: 'absolute', top: '52px', right: 0,
+        width: '360px', background: 'var(--off-white)',
+        borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.12)',
+        border: '1px solid rgba(74,155,142,0.15)',
+        zIndex: 200, overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '16px 20px', borderBottom: '1px solid rgba(74,155,142,0.1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Bell size={16} color="var(--teal)" />
+          <span style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-dark)' }}>Notifications</span>
+          {notifs.filter(n => !n.read).length > 0 && (
+            <span style={{
+              background: '#EF4444', color: 'white',
+              fontSize: '11px', fontWeight: '700',
+              padding: '1px 7px', borderRadius: '100px',
+            }}>{notifs.filter(n => !n.read).length}</span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <motion.button
+            whileHover={{ color: 'var(--teal)' }}
+            onClick={onReadAll}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '12px', color: 'var(--text-mid)', fontWeight: '500',
+              display: 'flex', alignItems: 'center', gap: '4px',
+            }}
+          >
+            <CheckCheck size={13} /> Mark all read
+          </motion.button>
+          <motion.button
+            whileHover={{ background: 'var(--eggshell)' }}
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              width: '26px', height: '26px', borderRadius: '6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={14} color="var(--text-mid)" />
+          </motion.button>
+        </div>
+      </div>
+
+      {/* List */}
+      <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+        {notifs.map(n => {
+          const IconComp = iconMap[n.icon]
+          return (
+            <motion.div
+              key={n.id}
+              whileHover={{ background: 'var(--eggshell)' }}
+              onClick={() => onRead(n.id)}
+              style={{
+                display: 'flex', gap: '12px', padding: '14px 20px',
+                borderBottom: '1px solid rgba(74,155,142,0.07)',
+                cursor: 'pointer', transition: 'background 0.15s',
+                background: n.read ? 'transparent' : 'rgba(74,155,142,0.04)',
+              }}
+            >
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: colorMap[n.icon], flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <IconComp size={16} color="var(--teal)" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3px' }}>
+                  <span style={{
+                    fontSize: '13px', fontWeight: n.read ? '500' : '700',
+                    color: 'var(--text-dark)', lineHeight: 1.3,
+                  }}>{n.title}</span>
+                  {!n.read && (
+                    <div style={{
+                      width: '7px', height: '7px', borderRadius: '50%',
+                      background: 'var(--teal)', flexShrink: 0, marginTop: '3px', marginLeft: '6px',
+                    }} />
+                  )}
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-mid)', lineHeight: 1.5, marginBottom: '4px' }}>{n.body}</p>
+                <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>{n.time}</span>
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: '12px 20px', textAlign: 'center', borderTop: '1px solid rgba(74,155,142,0.1)' }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>That's all your notifications</span>
+      </div>
+    </motion.div>
+  )
 }
 
 // ─── Sidebar link ─────────────────────────────────────────────────────────────
@@ -143,6 +324,8 @@ export default function Dashboard() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [greeting, setGreeting] = useState('Good morning')
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS)
 
   const supabase = createClient()
 
@@ -175,6 +358,16 @@ export default function Dashboard() {
     await supabase.auth.signOut()
     window.location.href = '/'
   }
+
+  function markRead(id: string) {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }
+
+  function markAllRead() {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }
+
+  const unreadCount = notifications.filter(n => !n.read).length
 
   if (loading) {
     return (
@@ -310,18 +503,58 @@ export default function Dashboard() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Notification bell */}
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                width: '40px', height: '40px', borderRadius: '10px',
-                background: 'var(--off-white)', border: '1px solid rgba(74,155,142,0.15)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <Bell size={18} color="var(--text-mid)" />
-            </motion.div>
+            <div style={{ position: 'relative' }}>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setNotifOpen(o => !o)}
+                style={{
+                  width: '40px', height: '40px', borderRadius: '10px',
+                  background: notifOpen ? 'var(--teal-light)' : 'var(--off-white)',
+                  border: `1px solid ${notifOpen ? 'rgba(74,155,142,0.4)' : 'rgba(74,155,142,0.15)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', transition: 'background 0.2s, border-color 0.2s',
+                }}
+              >
+                <Bell size={18} color={notifOpen ? 'var(--teal)' : 'var(--text-mid)'} />
+                {unreadCount > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    style={{
+                      position: 'absolute', top: '-5px', right: '-5px',
+                      width: '18px', height: '18px', borderRadius: '50%',
+                      background: '#EF4444', border: '2px solid var(--eggshell)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', fontWeight: '700', color: 'white',
+                    }}
+                  >
+                    {unreadCount}
+                  </motion.div>
+                )}
+              </motion.div>
+
+              <AnimatePresence>
+                {notifOpen && (
+                  <NotificationPanel
+                    notifs={notifications}
+                    onRead={markRead}
+                    onReadAll={markAllRead}
+                    onClose={() => setNotifOpen(false)}
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Click outside overlay */}
+              {notifOpen && (
+                <div
+                  onClick={() => setNotifOpen(false)}
+                  style={{
+                    position: 'fixed', inset: 0, zIndex: 199,
+                  }}
+                />
+              )}
+            </div>
 
             {/* Upgrade badge */}
             <Link href="/upgrade" style={{ textDecoration: 'none' }}>
