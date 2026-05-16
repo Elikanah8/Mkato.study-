@@ -79,7 +79,7 @@ function Blobs() {
 }
 
 // ─── University logo pill ────────────────────────────────────────────────────
-function UniPill({ name, delay }) {
+function UniPill({ name, delay }: { name: string; delay: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
@@ -106,7 +106,7 @@ function UniPill({ name, delay }) {
 }
 
 // ─── Feature card ────────────────────────────────────────────────────────────
-function FeatureCard({ icon: Icon, title, desc, delay, color, href }) {
+function FeatureCard({ icon: Icon, title, desc, delay, color, href }: { icon: any; title: string; desc: string; delay: number; color?: string; href: string }) {
   return (
     <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
       <motion.div
@@ -144,7 +144,7 @@ function FeatureCard({ icon: Icon, title, desc, delay, color, href }) {
 }
 
 // ─── Stat item ───────────────────────────────────────────────────────────────
-function StatItem({ number, label, delay }) {
+function StatItem({ number, label, delay }: { number: string; label: string; delay: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
@@ -160,7 +160,7 @@ function StatItem({ number, label, delay }) {
 }
 
 // ─── Pricing card ────────────────────────────────────────────────────────────
-function PricingCard({ title, price, sub, features, cta, highlight, delay }) {
+function PricingCard({ title, price, sub, features, cta, highlight, delay }: { title: string; price: string; sub: string; features: string[]; cta: string; highlight?: boolean; delay: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -189,7 +189,7 @@ function PricingCard({ title, price, sub, features, cta, highlight, delay }) {
       <p style={{ fontSize: '13px', fontWeight: '700', color: highlight ? 'rgba(255,255,255,0.7)' : 'var(--text-mid)', marginBottom: '8px', letterSpacing: '0.05em' }}>{title}</p>
       <p style={{ fontSize: '42px', fontWeight: '800', color: highlight ? 'white' : 'var(--text-dark)', marginBottom: '4px' }}>{price}</p>
       <p style={{ fontSize: '13px', color: highlight ? 'rgba(255,255,255,0.6)' : 'var(--text-light)', marginBottom: '28px' }}>{sub}</p>
-      {features.map(f => (
+      {features.map((f: string) => (
         <div key={f} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
           <CheckCircle size={16} color={highlight ? 'rgba(255,255,255,0.9)' : 'var(--teal)'} />
           <span style={{ fontSize: '14px', color: highlight ? 'rgba(255,255,255,0.9)' : 'var(--text-mid)' }}>{f}</span>

@@ -49,7 +49,7 @@ export default function NotesPage() {
     const [newCourse, setNewCourse] = useState('')
     const contentRef = useRef<HTMLTextAreaElement>(null)
     const saveTimer = useRef<NodeJS.Timeout | undefined>(undefined)
-
+   
     // Load notes from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('mkato_notes')
